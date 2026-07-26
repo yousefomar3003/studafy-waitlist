@@ -1,7 +1,5 @@
 import { motion } from 'framer-motion'
-import { useState, useEffect } from 'react'
 import WaitlistForm from './WaitlistForm'
-import { supabase } from '../../lib/supabase'
 
 const reveal = {
   hidden: { opacity: 0, y: 28 },
@@ -13,22 +11,7 @@ const reveal = {
 }
 
 export default function WaitlistFormSection() {
-  const [count, setCount] = useState(0)
-
-  useEffect(() => {
-    async function fetchCount() {
-      if (!supabase) { setCount(187); return }
-      try {
-        const { count: c } = await supabase
-          .from('waitlist')
-          .select('*', { count: 'exact', head: true })
-        setCount(c || 187)
-      } catch {
-        setCount(187)
-      }
-    }
-    fetchCount()
-  }, [])
+  const count = 187
 
   return (
     <section className="relative py-[140px] px-6" id="waitlist">

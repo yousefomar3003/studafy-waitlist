@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { submitWaitlist } from '../../lib/supabase'
+import { submitWaitlist, WaitlistError } from '../../lib/supabase'
 import CountryCombobox from '../ui/CountryCombobox'
 import FrameworkChips from '../ui/FrameworkChips'
 import PhoneInput from '../ui/PhoneInput'
@@ -22,6 +22,7 @@ export default function WaitlistForm() {
   const [sending, setSending] = useState(false)
   const [done, setDone] = useState(null)
   const [liveMsg, setLiveMsg] = useState('')
+  const [formError, setFormError] = useState('')
 
   const formRef = useRef(null)
 
@@ -53,11 +54,8 @@ export default function WaitlistForm() {
       setLiveMsg('Check the highlighted fields.')
       return
     }
-    setLiveMsg('')
-
-    if (honeypot) return
-
     setSending(true)
+    setFormError('')
 
     try {
       const res = await submitWaitlist({
@@ -68,11 +66,21 @@ export default function WaitlistForm() {
         phone: (country ? country[1] : '') + phone.replace(/^0+/, ''),
         name: name.trim(),
         email: email.trim(),
+        honeypot,
       })
-      setTimeout(() => setDone({ school: school.trim(), position: res.position || INITIAL_WAITLIST_COUNT }), 900)
+      setTimeout(() => setDone({ school: school.trim(), position: res.position }), 900)
     } catch (err) {
-      console.warn('[studafy] submit error, using stub:', err)
-      setTimeout(() => setDone({ school: school.trim(), position: INITIAL_WAITLIST_COUNT }), 900)
+      setSending(false)
+
+      if (err instanceof WaitlistError && err.status === 429) {
+        setFormError('That was a lot of submissions at once. Please try again in a few minutes.')
+      } else if (err instanceof WaitlistError && err.status === 400) {
+        setErrors(prev => ({ ...prev, ...err.fields }))
+        setFormError('Check the highlighted fields.')
+      } else {
+        console.error('[studafy] waitlist submit failed:', err)
+        setFormError("We couldn't save your details. Please check your connection and try again.")
+      }
     }
   }
 
@@ -186,6 +194,9 @@ export default function WaitlistForm() {
         {sending && <span className="absolute left-0 right-0 top-0 h-0.5 bg-cyan animate-sweep" />}
       </button>
 
+      {formError && (
+        <p role="alert" className="text-[13px] leading-[1.5] text-err m-0">{formError}</p>
+      )}
       <p className="text-[13px] leading-[1.5] text-muted m-0" aria-live="polite">{liveMsg}</p>
       <p className="text-[13px] leading-[1.5] text-muted m-0">
         We'll only use this to contact you about Studafy. <a href="/privacy" className="text-blue hover:text-navy transition-colors">Privacy</a>
