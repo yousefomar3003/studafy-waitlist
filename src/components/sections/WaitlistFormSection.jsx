@@ -1,5 +1,8 @@
 import { motion } from 'framer-motion'
+import { useState, useEffect } from 'react'
 import WaitlistForm from './WaitlistForm'
+
+const API_BASE = import.meta.env.VITE_API_URL || ''
 
 const reveal = {
   hidden: { opacity: 0, y: 28 },
@@ -11,7 +14,14 @@ const reveal = {
 }
 
 export default function WaitlistFormSection() {
-  const count = 187
+  const [count, setCount] = useState(187)
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/count`)
+      .then(r => r.json())
+      .then(d => { if (d.count) setCount(d.count) })
+      .catch(() => {})
+  }, [])
 
   return (
     <section className="relative py-[140px] px-6" id="waitlist">

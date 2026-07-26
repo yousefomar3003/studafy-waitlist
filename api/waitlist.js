@@ -211,9 +211,12 @@ export default async function handler(req, res) {
         const pos = existing ? positionOffset + existing.signup_no : positionOffset + 1
 
         if (clean.email) {
-          sendConfirmationEmail(clean.email, clean.school, pos).catch(err =>
-            console.error('[waitlist] Failed to send confirmation email:', err)
-          )
+          try {
+            await sendConfirmationEmail(clean.email, clean.school, pos)
+            console.log('[waitlist] Confirmation email sent to', clean.email)
+          } catch (err) {
+            console.error('[waitlist] Failed to send confirmation email:', err.message, err.code || '')
+          }
         }
 
         return sendJson(res, { position: pos, duplicate: true }, 200, cors)
@@ -224,9 +227,12 @@ export default async function handler(req, res) {
     const position = positionOffset + data.signup_no
 
     if (clean.email) {
-      sendConfirmationEmail(clean.email, clean.school, position).catch(err =>
-        console.error('[waitlist] Failed to send confirmation email:', err)
-      )
+      try {
+        await sendConfirmationEmail(clean.email, clean.school, position)
+        console.log('[waitlist] Confirmation email sent to', clean.email)
+      } catch (err) {
+        console.error('[waitlist] Failed to send confirmation email:', err.message, err.code || '')
+      }
     }
 
     return sendJson(res, { position, duplicate: false }, 200, cors)
